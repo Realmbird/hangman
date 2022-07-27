@@ -1,5 +1,5 @@
 # frozen_string_literal: false
-
+require 'json'
 # Sets up the variables required to play a game of Hangman (overall application)
 class Hangman
   # sets up hangman with file, dictionary, and random word
@@ -8,7 +8,6 @@ class Hangman
     @data = File.read('save.txt')
     @dictionary = []
     fill_dictionary
-    puts random_word
   end
 
   # sets random word
@@ -30,7 +29,10 @@ class Hangman
   # starts a hangman game
 
   def start_game
+    puts 'Load game? yes or no'
+    input = gets.chomp.downcase
     rounds = Game.new(@answer)
+    rounds.load if input == 'yes'
     rounds.round
   end
 end
@@ -55,9 +57,9 @@ class Game
 
   # Starts guess
   def guess
-    puts 'Enter save if you wish to save your game, enter anything else to continue'
+    puts 'Enter save or yes if you wish to save your game, enter anything else to continue'
     choice = gets.chomp.downcase
-    save if(choice == 'save')
+    save if choice == 'save' || choice == 'yes'
     puts 'Enter a letter'
     letter = gets.chomp.downcase
     check(letter)
@@ -79,17 +81,20 @@ class Game
 
   # save function
   def save
-    File.write('save.txt', "#{@answer},#{@current},#{@lives}")
+    data = JSON.dump({
+      :answer => @answer,
+      :current => @current,
+      :lives => @lives
+    })
+    File.write('save.json', data)
   end
 
   # load function might be used
+  # loads game
   def load
-    contents = File.read('save.txt')
-    info = contents.split(',')
-    @answer = info[0]
-    @current = info[1]
-    @key = info[2]
-    @lives = info[3].to_i
+    string = File.read('save.json')
+    data = JSON.parse string
+    initialize(data['answer'], data['current'], data['lives'])
   end
 end
 game = Hangman.new
